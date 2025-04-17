@@ -1,29 +1,57 @@
 package com.marco.util;
 
-import com.marco.exception.ConvertException;
+import com.marco.exception.ReadFileException;
+import com.marco.exception.WriteFileException;
+import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import org.springframework.stereotype.Component;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriter;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.IIOImage;
+import javax.imageio.*;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+@Getter
 
 @Component
 public class ImageUtil {
+    private final Set<String> readableFormats;
+    private final Set<String> writeableFormats;
 
-    private final List<String> supportedFormats = Arrays.asList("jpg", "jpeg", "png", "gif", "bmp", "tiff");
+    public ImageUtil() {
+        this.readableFormats = new HashSet<>(Arrays.asList(ImageIO.getReaderFormatNames()));
+        this.writeableFormats = new HashSet<>(Arrays.asList(ImageIO.getWriterFormatNames()));
+    }
+    @PostConstruct
+    public void initFormats() {
+        System.out.println("**IMAGES**");
+        System.out.println("Readable Formats: " + readableFormats);
+        System.out.println("Writable Formats: " + writeableFormats);
+    }
 
-    public void validateImageFormat(String format) throws ConvertException {
-        // Check if the format is not supported
-        if (!supportedFormats.contains(format.toLowerCase())) {
-            throw new ConvertException("Invalid format: " + format);
+    public void validateReadableFormat(String format) throws ReadFileException {
+        if (!readableFormats.contains(format.toLowerCase())) {
+            throw new ReadFileException("Unsupported format for reading: " + format);
         }
+    }
+
+    public void validateWriteableFormat(String format) throws WriteFileException {
+        if (!writeableFormats.contains(format.toLowerCase())) {
+            throw new WriteFileException("Unsupported format for writing: " + format);
+        }
+    }
+
+
+    public BufferedImage readImage(InputStream inputStream) throws ReadFileException, IOException {
+        // Reads the input stream into a BufferedImage object
+        BufferedImage image = ImageIO.read(inputStream);
+        if (image == null) {
+            // Throws an exception if the file cannot be interpreted as a valid image
+            throw new ReadFileException("Invalid file for image conversion");
+        }
+        return image;
     }
 
     private BufferedImage removeAlphaChannel(BufferedImage image) {
@@ -47,12 +75,12 @@ public class ImageUtil {
         return newImage;
     }
 
-    private ImageWriter getImageWriter(String targetFormat) throws ConvertException {
+    private ImageWriter getImageWriter(String targetFormat) throws WriteFileException {
         // Fetches an iterator of ImageWriters that support the target format
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(targetFormat);
         if (!writers.hasNext()) {
             // Throws an exception if no writer is available for the target format
-            throw new ConvertException("No writer found for the format: " + targetFormat);
+            throw new WriteFileException("No writer found for the format: " + targetFormat);
         }
         // Returns the first available ImageWriter
         return writers.next();
@@ -61,7 +89,7 @@ public class ImageUtil {
 
 
     public void writeImage(BufferedImage image, String targetFormat, OutputStream outputStream)
-            throws ConvertException, IOException {
+            throws WriteFileException, IOException {
         // Get an iterator for ImageWriters that support the target format
         ImageWriter writer = getImageWriter(targetFormat);
         ImageWriteParam param = writer.getDefaultWriteParam();
@@ -71,4 +99,19 @@ public class ImageUtil {
         writer.setOutput(ImageIO.createImageOutputStream(outputStream));
         writer.write(null, new IIOImage(image, null, null), param);
     }
+
+    public String getImageFormat(InputStream inputStream) throws IOException {
+        try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(inputStream)) {
+            if (imageInputStream == null) {
+                throw new IOException("Invalid image stream");
+            }
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
+            if (readers.hasNext()) {
+                return readers.next().getFormatName();
+            } else {
+                throw new IOException("Unsupported image format");
+            }
+        }
+    }
+
 }

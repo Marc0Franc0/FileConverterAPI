@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/images")
@@ -46,5 +49,12 @@ public class ImageController {
         }
 
 
+    }
+    @GetMapping("/help")
+    public ResponseEntity<Map<String, Set<String>>> getSupportedFormats() {
+        Map<String, Set<String>> formats = new HashMap<>();
+        formats.put("Readable formats:", imgService.getReadableFormats());
+        formats.put("Writeable formats:", imgService.getWriteableFormats());
+        return ResponseEntity.status(HttpStatus.OK).body(formats);
     }
 }

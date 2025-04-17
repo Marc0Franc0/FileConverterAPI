@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.marco</groupId>
 	<artifactId>FileConverterAPI</artifactId>
-	<version>0.1.0</version>
+	<version>0.2.0</version>
 	<packaging>pom</packaging>
 	<name>FileConverterAPI</name>
 	<description>Demo project for Spring Boot</description>
@@ -50,6 +50,8 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
 	</dependencies>
 
 	<build>
