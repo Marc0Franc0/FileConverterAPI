@@ -17,8 +17,8 @@ import java.util.*;
 
 @Component
 public class ImageUtil {
-    private final Set<String> readableFormats;
-    private final Set<String> writeableFormats;
+    public final Set<String> readableFormats;
+    public final Set<String> writeableFormats;
 
     public ImageUtil() {
         this.readableFormats = new HashSet<>(Arrays.asList(ImageIO.getReaderFormatNames()));
@@ -32,12 +32,24 @@ public class ImageUtil {
     }
 
     public void validateReadableFormat(String format) throws ReadFileException {
+        if (format == null) {
+            throw new ReadFileException("Format cannot be null");
+        }
+        if (this.readableFormats == null || this.readableFormats.isEmpty()) {
+            throw new ReadFileException("No readable formats configured.");
+        }
         if (!readableFormats.contains(format.toLowerCase())) {
             throw new ReadFileException("Unsupported format for reading: " + format);
         }
     }
 
     public void validateWriteableFormat(String format) throws WriteFileException {
+        if (format == null) {
+            throw new WriteFileException("Format cannot be null");
+        }
+        if (this.writeableFormats == null || this.writeableFormats.isEmpty()) {
+            throw new WriteFileException("No writeable formats configured.");
+        }
         if (!writeableFormats.contains(format.toLowerCase())) {
             throw new WriteFileException("Unsupported format for writing: " + format);
         }
@@ -54,7 +66,7 @@ public class ImageUtil {
         return image;
     }
 
-    private BufferedImage removeAlphaChannel(BufferedImage image) {
+    protected BufferedImage removeAlphaChannel(BufferedImage image) {
         // If the image does not have an alpha channel, return it as is
         if (!image.getColorModel().hasAlpha()) {
             return image;
@@ -75,7 +87,7 @@ public class ImageUtil {
         return newImage;
     }
 
-    private ImageWriter getImageWriter(String targetFormat) throws WriteFileException {
+    protected ImageWriter getImageWriter(String targetFormat) throws WriteFileException {
         // Fetches an iterator of ImageWriters that support the target format
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(targetFormat);
         if (!writers.hasNext()) {
@@ -89,15 +101,20 @@ public class ImageUtil {
 
 
     public void writeImage(BufferedImage image, String targetFormat, OutputStream outputStream)
-            throws WriteFileException, IOException {
-        // Get an iterator for ImageWriters that support the target format
-        ImageWriter writer = getImageWriter(targetFormat);
-        ImageWriteParam param = writer.getDefaultWriteParam();
-        // Remove the alpha channel if present
-        image = removeAlphaChannel(image);
-        // Write the image using the specific writer
-        writer.setOutput(ImageIO.createImageOutputStream(outputStream));
-        writer.write(null, new IIOImage(image, null, null), param);
+            throws WriteFileException {
+        try{
+            // Get an iterator for ImageWriters that support the target format
+            ImageWriter writer = getImageWriter(targetFormat);
+            ImageWriteParam param = writer.getDefaultWriteParam();
+            // Remove the alpha channel if present
+            image = removeAlphaChannel(image);
+            // Write the image using the specific writer
+            writer.setOutput(ImageIO.createImageOutputStream(outputStream));
+            writer.write(null, new IIOImage(image, null, null), param);
+        }catch(IOException e){
+            throw new WriteFileException("Error writing image: " + e.getMessage(), e);
+        }
+
     }
 
     public String getImageFormat(InputStream inputStream) throws IOException {

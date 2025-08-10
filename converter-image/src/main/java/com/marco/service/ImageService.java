@@ -3,6 +3,7 @@ package com.marco.service;
 import com.marco.exception.ConvertException;
 import com.marco.interfaces.ConvertService;
 import com.marco.util.ImageUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -15,6 +16,7 @@ public class ImageService implements ConvertService {
 
     private final ImageUtil imageUtils;
 
+    @Autowired
     public ImageService(ImageUtil imageUtils) {
         this.imageUtils = imageUtils;
     }
@@ -44,7 +46,7 @@ public class ImageService implements ConvertService {
                 .collect(Collectors.toSet());
     }
     public Set<String> getReadableFormats(){
-        return imageUtils.getWriteableFormats().stream()
+        return imageUtils.getReadableFormats().stream()
                        .map(String::toLowerCase)
                        .collect(Collectors.toSet());
     }
